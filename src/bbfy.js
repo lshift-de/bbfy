@@ -19,7 +19,7 @@ const defaults = {
 
 function lex (input) {
   const asterisk = string('*');
-  const newline = string('\n');
+  const newline = string('\n').map((s) => ({ type: 'newline', value: s }));
   const tag_name = regex(/[^\]]+/);
   const open_bracket = string('[');
   const close_bracket = string(']');
@@ -39,10 +39,8 @@ function lex (input) {
           .skip(close_bracket)
           .map((tag) => ({ type: 'close-tag', value: tag }));
 
-  //const list_item = list_tag.then(regex())
-  const raw = regex(/[^[]+/).map((text) => ({ type: 'text', value: text }));
-  
-  const text = alt(close_tag, open_tag, raw).many();
+  const raw = regex(/[^[\n]+/).map((text) => ({ type: 'text', value: text }));
+  const text = alt(close_tag, list_tag, open_tag, raw, newline).many();
 
   return text.parse(input);
 }
@@ -50,31 +48,64 @@ function lex (input) {
 function parse (lexemes) {
   const { tags, snippets, sane } = lexemes.reduce((acc, { type, value }) => {
     const { tags, snippets, sane } = acc;
-    
-    if (type === 'text') {
+
+    function add_text (text) {
       return _.extend({}, acc, { snippets: snippets.concat([{
-        text: value, tags: _.uniq(tags).reverse()
+        text: text, tags: _.uniq(tags).reverse()
       }]) });
     }
-    else if (type === 'open-tag') {
+
+    function close_tag (index) {
+      return _.extend({}, acc, {
+        tags: tags.slice(0, index).concat(tags.slice(index + 1)),
+        sane: sane && (index === 0)
+      });
+    }
+    
+    if (type === 'text') {
+      return add_text(value);
+    }
+    else if (type === 'open-tag' || type === 'list-tag') {
       return _.extend({}, acc, { tags: [value].concat(tags) });
     }
     else if (type === 'close-tag') {
       const index = tags.indexOf(value);
-      if (index === -1) {
-        return _.extend({}, acc, { sane: false });
-      }
-      else {
-        return _.extend({}, acc, {
-          tags: tags.slice(0, index).concat(tags.slice(index + 1)),
-          sane: sane && (index === 0)
-        });
-      }
+      return (index === -1) ? _.extend({}, acc, { sane: false }) : close_tag(index);
+    }
+    else if (type === 'newline') {
+      const index = tags.indexOf('*');
+      return (index === -1) ? add_text(value) : close_tag(index);
     }
     else { throw 'Unsupported lexeme'; }
   }, { tags: [], snippets: [], sane: true });
 
   return { snippets: snippets, sane: sane && tags.length === 0 };
+}
+
+function cst (snippets) {
+  function node (tag, snippets) {
+    return (tag === void 0)
+      ? { type: 'text', value: _.pluck(snippets, 'text').join('') }
+      : { type: 'tag', value: tag, children: rec(snippets) };
+  }
+
+  function rec (snippets) {
+    const { acc, result, tag } = snippets.reduce(({ acc, tag, result }, { text, tags }) => {
+      const [next_tag, ...rest] = tags;
+      
+      // return (tag === next_tag)
+      //   ? { tag: tag, acc: acc.concat([{ text: text, tags: rest }]), result: result }
+      //   : { tag: next_tag, acc: [{ text: text, tags: rest }], result: result.concat([node(tag, acc)]) };
+
+      return (tag === next_tag || tag === '*')
+        ? { tag: tag, acc: acc.concat([{ text: text, tags: rest }]), result: result }
+        : { tag: next_tag, acc: [{ text: text, tags: rest }], result: result.concat([node(tag, acc)]) };
+    }, { acc: [], result: [], tag: snippets[0].tags[0] });
+
+    return result.concat([node(tag, acc)]);
+  }
+
+  return { type: 'root', children: rec(snippets) };
 }
 
 function transform (cst, rules, unsupported) {
@@ -95,28 +126,6 @@ function transform (cst, rules, unsupported) {
   }
 
   return rec(cst);
-}
-
-function cst (snippets) {
-  function node (tag, snippets) {
-    return (tag === void 0)
-      ? { type: 'text', value: _.pluck(snippets, 'text').join('') }
-      : { type: 'tag', value: tag, children: rec(snippets) };
-  }
-
-  function rec (snippets) {
-    const { acc, result, tag } = snippets.reduce(({ acc, tag, result }, { text, tags }) => {
-      const [next_tag, ...rest] = tags;
-      
-      return (tag === next_tag)
-        ? { tag: tag, acc: acc.concat([{ text: text, tags: rest }]), result: result }
-      : { tag: next_tag, acc: [{ text: text, tags: rest }], result: result.concat([node(tag, acc)]) };
-    }, { acc: [], result: [], tag: snippets[0].tags[0] });
-
-    return result.concat([node(tag, acc)]);
-  }
-
-  return { type: 'root', children: rec(snippets) };
 }
 
 const Bbfy = {

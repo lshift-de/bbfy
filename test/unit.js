@@ -14,9 +14,17 @@ var data = [
   {
     comment: 'simple string with newline',
     input: 'Hello\nWorld!',
-    lexed: [{ type: 'text', value: 'Hello\nWorld!' }],
+    lexed: [
+      { type: 'text', value: 'Hello' },
+      { type: 'newline', value: '\n' },
+      { type: 'text', value: 'World!' }
+    ],
     sane: true,
-    snippets: [{ text: 'Hello\nWorld!', tags: [] }],
+    snippets: [
+      { text: 'Hello', tags: [] },
+      { text: '\n', tags: [] },
+      { text: 'World!', tags: [] }
+    ],
     cst: [{ type: 'text', value: 'Hello\nWorld!' }],
     recode: 'Hello\nWorld!'
   },
@@ -141,7 +149,57 @@ var data = [
       { type: 'tag', value: 'b', children: [{ type: 'text', value: 'Foo' }] }
     ] }],
     recode: '[a][b]Foo[/b][/a]'
-  }
+  },
+  {
+    comment: 'list item',
+    input: '[*] Hello World!\n',
+    lexed: [
+      { type: 'list-tag', value: '*' },
+      { type: 'text', value: ' Hello World!' },
+      { type: 'newline', value: '\n' }
+    ],
+    sane: true,
+    snippets: [{ text: ' Hello World!', tags: ['*'] }],
+    cst: [{ type: 'tag', value: '*', children: [{ type: 'text', value: ' Hello World!' }] }],
+    recode: '[*] Hello World!\n'
+  },
+  {
+    comment: 'two messed up tag closures',
+    input: '[a]Hello [b]cruel[/a] World![/b]',
+    lexed: [
+      { type: 'open-tag', value: 'a' },
+      { type: 'text', value: 'Hello ' },
+      { type: 'open-tag', value: 'b' },
+      { type: 'text', value: 'cruel' },
+      { type: 'close-tag', value: 'a' },
+      { type: 'text', value: ' World!' },
+      { type: 'close-tag', value: 'b' }
+    ],
+    sane: false,
+    snippets: [
+      { text: 'Hello ', tags: ['a'] },
+      { text: 'cruel', tags: ['a', 'b'] },
+      { text: ' World!', tags: ['b'] }
+    ],
+    cst:
+    [
+      { type: 'tag', value: 'a', children: [
+        { type: 'text', value: 'Hello ' },
+        { type: 'tag', value: 'b', children: [ { type: 'text', value: 'cruel' } ] }
+      ] },
+      { type: 'tag', value: 'b', children: [ { type: 'text', value: ' World!' } ] }
+    ],
+    recode: '[a]Hello [b]cruel[/b][/a][b] World![/b]'
+  },
+  // {
+  //   comment: '...',
+  //   input: '...',
+  //   lexed: [{ type: '...', value: '...' }],
+  //   sane: true,
+  //   snippets: [{ text: '...', tags: ['...'] }],
+  //   cst: [{ type: '...', value: '...' }],
+  //   recode: '...'
+  // },
 ];
 
 test('basic', function (t) {
@@ -149,43 +207,33 @@ test('basic', function (t) {
   t.ok(bbfy.converter(), 'can create converters');
 });
 
-test('lexing', function (t) {
-  var lex = bbfy.api.lex;
-  t.plan(2 * data.length);
-  data.forEach(function (item) {
-    var result = lex(item.input);
-    t.ok(result.status, 'lexing ' + item.comment);
-    t.deepEqual(result.value, item.lexed, 'lexing content of ' + item.comment);
-  });
-});
+data.forEach(function (item) {
+  test(item.comment, function (t) {
+    t.plan(6);
 
-test('parsing', function (t) {
-  var parse = bbfy.api.parse;
-  t.plan(2 * data.length);
-  data.forEach(function (item) {
-    var result = parse(item.lexed);
-    t.equal(result.sane, item.sane, 'sanity check of ' + item.comment);
-    t.deepEqual(result.snippets, item.snippets, 'parsing content of ' + item.comment);
-  });
-});
+    var api = bbfy.api,
+        lex = api.lex,
+        parse = api.parse,
+        cst = api.cst;
+    var result;
+    var convert = bbfy.converter({
+      rules: bbfy.ruleSets.strip,
+      unsupported: function (text, tag) {
+        return tag === '*'
+          ? '[' + tag + ']' + text + '\n'
+          : '[' + tag + ']' + text + '[/' + tag + ']';
+      }
+    });
 
-test('cst', function (t) {
-  var cst = bbfy.api.cst;
-  t.plan(data.length);
-  data.forEach(function (item) {
-    t.deepEqual(cst(item.snippets).children, item.cst, 'syntrax tree of ' + item.comment);
-  });
-});
+    result = lex(item.input);
+    t.ok(result.status, 'lexing');
+    t.deepEqual(result.value, item.lexed, 'lexing content');
 
-test('transform: recode', function (t) {
-  var convert = bbfy.converter({
-    rules: bbfy.ruleSets.strip,
-    unsupported: function (text, tag) {
-      return '[' + tag + ']' + text + '[/' + tag + ']';
-    }
-  });
-  t.plan(data.length);
-  data.forEach(function (item) {
-    t.equal(convert(item.input), item.recode, 'transforming (recode) ' + item.comment);
+    result = parse(item.lexed);  
+    t.equal(result.sane, item.sane, 'sanity check');
+    t.deepEqual(result.snippets, item.snippets, 'parsing content');
+
+    t.deepEqual(cst(item.snippets).children, item.cst, 'syntrax tree');
+    t.equal(convert(item.input), item.recode, 'transforming (recode)');
   });
 });
