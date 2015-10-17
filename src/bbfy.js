@@ -1,4 +1,4 @@
-/* -*- mode: js2; js2-strict-missing-semi-warning: nil; -*- */
+/* -*- mode: js2; -*- */
 'use strict';
 
 // import { regex, string, alt } from 'parsimmon';
