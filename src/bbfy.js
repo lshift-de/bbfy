@@ -1,5 +1,5 @@
 /* -*- mode: js2; -*- */
-'use strict';
+'use strict'; // Not required in ES6, but will appear in generated ES5 code
 
 // import { regex, string, alt } from 'parsimmon';
 const { regex, string, alt } = parsimmon;
@@ -45,7 +45,7 @@ function lex (input) {
   return text.parse(input);
 }
 
-function parse (lexemes) {
+function sanitize (lexemes) {
   const { tags, snippets, sane } = lexemes.reduce((acc, { type, value }) => {
     const { tags, snippets, sane } = acc;
 
@@ -82,7 +82,7 @@ function parse (lexemes) {
   return { snippets: snippets, sane: sane && tags.length === 0 };
 }
 
-function cst (snippets) {
+function parse (snippets) {
   function node (tag, snippets) {
     return (tag === void 0)
       ? { type: 'text', value: _.pluck(snippets, 'text').join('') }
@@ -93,10 +93,6 @@ function cst (snippets) {
     const { acc, result, tag } = snippets.reduce(({ acc, tag, result }, { text, tags }) => {
       const [next_tag, ...rest] = tags;
       
-      // return (tag === next_tag)
-      //   ? { tag: tag, acc: acc.concat([{ text: text, tags: rest }]), result: result }
-      //   : { tag: next_tag, acc: [{ text: text, tags: rest }], result: result.concat([node(tag, acc)]) };
-
       return (tag === next_tag || tag === '*')
         ? { tag: tag, acc: acc.concat([{ text: text, tags: rest }]), result: result }
         : { tag: next_tag, acc: [{ text: text, tags: rest }], result: result.concat([node(tag, acc)]) };
@@ -133,10 +129,10 @@ const Bbfy = {
     return (text) => {
       const result = lex(text);
       if (!result.status) { throw parsimmon.formatError(text, result); }
-      return transform(cst(parse(result.value).snippets), rules, unsupported);
+      return transform(parse(sanitize(result.value).snippets), rules, unsupported);
     };
   },
   options: defaults,
   ruleSets: rule_sets,
-  api: { lex: lex, parse: parse, transform: transform, cst: cst }
+  api: { lex: lex, parse: parse, transform: transform, sanitize: sanitize }
 }

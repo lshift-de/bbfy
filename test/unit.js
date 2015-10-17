@@ -214,7 +214,7 @@ data.forEach(function (item) {
     var api = bbfy.api,
         lex = api.lex,
         parse = api.parse,
-        cst = api.cst;
+        sanitize = api.sanitize;
     var result;
     var convert = bbfy.converter({
       rules: bbfy.ruleSets.strip,
@@ -229,11 +229,11 @@ data.forEach(function (item) {
     t.ok(result.status, 'lexing');
     t.deepEqual(result.value, item.lexed, 'lexing content');
 
-    result = parse(item.lexed);  
+    result = sanitize(item.lexed);  
     t.equal(result.sane, item.sane, 'sanity check');
-    t.deepEqual(result.snippets, item.snippets, 'parsing content');
+    t.deepEqual(result.snippets, item.snippets, 'sanitizing content');
 
-    t.deepEqual(cst(item.snippets).children, item.cst, 'syntrax tree');
+    t.deepEqual(parse(item.snippets).children, item.cst, 'syntrax tree');
     t.equal(convert(item.input), item.recode, 'transforming (recode)');
   });
 });
