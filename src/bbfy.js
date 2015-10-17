@@ -18,17 +18,12 @@ const defaults = {
 };
 
 function lex (input) {
-  const asterisk = string('*');
   const newline = string('\n').map((s) => ({ type: 'newline', value: s }));
   const tag_name = regex(/[^\]]+/);
   const open_bracket = string('[');
   const close_bracket = string(']');
   const close_qualifier = string('/');
 
-  const list_tag = open_bracket
-          .then(asterisk)
-          .skip(close_bracket)
-          .map((tag) => ({ type: 'list-tag', value: tag }));
   const open_tag = open_bracket
           .then(tag_name)
           .skip(close_bracket)
@@ -40,7 +35,7 @@ function lex (input) {
           .map((tag) => ({ type: 'close-tag', value: tag }));
 
   const raw = regex(/[^[\n]+/).map((text) => ({ type: 'text', value: text }));
-  const text = alt(close_tag, list_tag, open_tag, raw, newline).many();
+  const text = alt(close_tag, open_tag, raw, newline).many();
 
   return text.parse(input);
 }
@@ -65,7 +60,7 @@ function sanitize (lexemes) {
     if (type === 'text') {
       return add_text(value);
     }
-    else if (type === 'open-tag' || type === 'list-tag') {
+    else if (type === 'open-tag') {
       return _.extend({}, acc, { tags: [value].concat(tags) });
     }
     else if (type === 'close-tag') {

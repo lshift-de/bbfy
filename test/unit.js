@@ -154,7 +154,7 @@ var data = [
     comment: 'list item',
     input: '[*] Hello World!\n',
     lexed: [
-      { type: 'list-tag', value: '*' },
+      { type: 'open-tag', value: '*' },
       { type: 'text', value: ' Hello World!' },
       { type: 'newline', value: '\n' }
     ],
@@ -209,8 +209,6 @@ test('basic', function (t) {
 
 data.forEach(function (item) {
   test(item.comment, function (t) {
-    t.plan(6);
-
     var api = bbfy.api,
         lex = api.lex,
         parse = api.parse,
@@ -224,6 +222,8 @@ data.forEach(function (item) {
           : '[' + tag + ']' + text + '[/' + tag + ']';
       }
     });
+
+    t.plan(6);
 
     result = lex(item.input);
     t.ok(result.status, 'lexing');
