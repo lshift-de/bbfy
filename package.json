@@ -1,0 +1,26 @@
+{
+  "name": "bbfy",
+  "version": "1.0.0",
+  "description": "BBCode Converter",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/gulp/bin/gulp.js test"
+  },
+  "keywords": [
+    "bbcode"
+  ],
+  "author": "Alexander Kahl <alex@lshift.de>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-es6-transpiler": "^1.0.1",
+    "gulp-tape": "0.0.4",
+    "gulp-umd": "^0.2.0",
+    "tap-colorize": "^1.2.0",
+    "tape-catch": "~1.0.4"
+  },
+  "dependencies": {
+    "parsimmon": "^0.7.0",
+    "underscore": "~1.8.3"
+  }
+}
