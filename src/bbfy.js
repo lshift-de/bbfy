@@ -2,7 +2,7 @@
 'use strict'; // Not required in ES6, but will appear in generated ES5 code
 
 // import { regex, string, alt } from 'parsimmon';
-const { regex, string, alt } = parsimmon;
+const { regex, string, alt, seq, whitespace, optWhitespace, fail, lazy } = parsimmon;
 const _ = underscore;
 
 const rule_sets = {
@@ -14,86 +14,113 @@ const rule_sets = {
 
 const defaults = {
   rules: rule_sets.html,
-  unsupported (text) { return text; }
+  unsupported (text) { return text; },
+  lineTags: ['*']
 };
 
-function lex (input) {
-  const newline = string('\n').map((s) => ({ type: 'newline', value: s }));
-  const tag_name = regex(/[^\]]+/);
+function parse (input) {
+  function tokenizer (type) {
+    return (value) => ({ type: type, value: value });
+  }
+  
+  const newline = string('\n').map(tokenizer('newline'));
+  const name = regex(/[^\] =]+/);
+  const attribute = string('=').then(name);
   const open_bracket = string('[');
   const close_bracket = string(']');
   const close_qualifier = string('/');
+  const raw = regex(/[^[\n]+/).map(tokenizer('text'));
+  const garbage = regex(/[\[\] ]/).map(tokenizer('text'));
+  
+  // const simple_tag = seq(name);
+  // const assignment = seq(name, attribute);
+  // const complex_tag = seq(name.skip(whitespace), assignment.skip(optWhitespace).many());
+  // const tag = complex_tag.or(assignment).or(simple_tag).map((tag, ...args) => {
+  //   if (args.length === 1) {
+  //     return { type: 'tag-assigment', value: , };
+  //   }
+  // });
 
+  const tag = name;
   const open_tag = open_bracket
-          .then(tag_name)
+          .then(tag)
           .skip(close_bracket)
-          .map((tag) => ({ type: 'open-tag', value: tag }));
+          .map(tokenizer('open-tag'));
+  
   const close_tag = open_bracket
           .then(close_qualifier)
-          .then(tag_name)
+          .then(name)
           .skip(close_bracket)
-          .map((tag) => ({ type: 'close-tag', value: tag }));
+          .map(tokenizer('close-tag'));
 
-  const raw = regex(/[^[\n]+/).map((text) => ({ type: 'text', value: text }));
-  const text = alt(close_tag, open_tag, raw, newline).many();
+  const text = alt(close_tag, open_tag, raw, newline, garbage).many();
 
   return text.parse(input);
 }
 
-function sanitize (lexemes) {
-  const { tags, snippets, sane } = lexemes.reduce((acc, { type, value }) => {
+function sanitize (lexemes, { lineTags = defaults.lineTags } = defaults) {
+  const { tags, snippets, sane } = lexemes.reduce((acc, { type, value, children }) => {
     const { tags, snippets, sane } = acc;
 
-    function add_text (text) {
+    function add_item (acc, type, value) {
       return _.extend({}, acc, { snippets: snippets.concat([{
-        text: text, tags: _.uniq(tags).reverse()
+        type: type, value: value, tags: _.uniq(tags).reverse()
       }]) });
     }
 
-    function close_tag (index) {
+    function close_tag (acc, index) {
       return _.extend({}, acc, {
         tags: tags.slice(0, index).concat(tags.slice(index + 1)),
         sane: sane && (index === 0)
       });
     }
-    
+
     if (type === 'text') {
-      return add_text(value);
+      return add_item(acc, 'text', value);
     }
     else if (type === 'open-tag') {
       return _.extend({}, acc, { tags: [value].concat(tags) });
     }
     else if (type === 'close-tag') {
       const index = tags.indexOf(value);
-      return (index === -1) ? _.extend({}, acc, { sane: false }) : close_tag(index);
+      return (index === -1) ? _.extend({}, acc, { sane: false }) : close_tag(acc, index);
     }
     else if (type === 'newline') {
-      const index = tags.indexOf('*');
-      return (index === -1) ? add_text(value) : close_tag(index);
+      const index = _.findIndex(tags, (tag) => _.contains(lineTags, tag));
+      return (index === -1)
+        ? add_item(acc, 'text', value)
+        : add_item(close_tag(acc, index), 'close', value);
     }
-    else { throw 'Unsupported lexeme'; }
+    else { throw 'Unsupported lexeme ' + type; }
   }, { tags: [], snippets: [], sane: true });
 
-  return { snippets: snippets, sane: sane && tags.length === 0 };
+  return { snippets: snippets, sane: sane && tags.length === 0, tags: tags };
 }
 
-function parse (snippets) {
+function cst (snippets, { lineTags = defaults.lineTags } = defaults) {
   function node (tag, snippets) {
     return (tag === void 0)
-      ? { type: 'text', value: _.pluck(snippets, 'text').join('') }
+      ? { type: 'text', value: _.pluck(snippets, 'value').join('') }
       : { type: 'tag', value: tag, children: rec(snippets) };
   }
 
   function rec (snippets) {
-    const { acc, result, tag } = snippets.reduce(({ acc, tag, result }, { text, tags }) => {
-      const [next_tag, ...rest] = tags;
+    if (snippets.length === 0) { return []; }
+    const { acc, result, tag } = snippets.reduce(({ acc, tag, result }, { type, value, tags }) => {
+      const [next_tag, ...rest] = _.sortBy(tags, (tag) => _.contains(lineTags, tag) ? 0 : 1);
       
-      return (tag === next_tag || tag === '*')
-        ? { tag: tag, acc: acc.concat([{ text: text, tags: rest }]), result: result }
-        : { tag: next_tag, acc: [{ text: text, tags: rest }], result: result.concat([node(tag, acc)]) };
+      if (type === 'close') {
+        return { tag: next_tag, acc: [], result: result.concat([node(tag, acc)]) };
+      }
+      else if (acc.length === 0 || tag === next_tag) {
+        return { tag: tag, acc: acc.concat([{ type: 'text', value: value, tags: rest }]), result: result };
+      }
+      else {
+        return { tag: next_tag, acc: [{ type: 'text', value: value, tags: rest }], result: result.concat([node(tag, acc)]) };
+      }
     }, { acc: [], result: [], tag: snippets[0].tags[0] });
 
-    return result.concat([node(tag, acc)]);
+    return acc.length > 0 ? result.concat([node(tag, acc)]) : result;
   }
 
   return { type: 'root', children: rec(snippets) };
@@ -120,14 +147,15 @@ function transform (cst, rules, unsupported) {
 }
 
 const Bbfy = {
-  converter ({ rules = defaults.rules, unsupported = defaults.unsupported } = defaults) {
+  converter (config = defaults) {
+    const { rules = defaults.rules, unsupported = defaults.unsupported } = config;
     return (text) => {
-      const result = lex(text);
+      const result = parse(text, config);
       if (!result.status) { throw parsimmon.formatError(text, result); }
-      return transform(parse(sanitize(result.value).snippets), rules, unsupported);
+      return transform(cst(sanitize(result.value, config).snippets), rules, unsupported);
     };
   },
   options: defaults,
   ruleSets: rule_sets,
-  api: { lex: lex, parse: parse, transform: transform, sanitize: sanitize }
+  api: { parse: parse, transform: transform, sanitize: sanitize, cst: cst }
 }

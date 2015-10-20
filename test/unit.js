@@ -5,25 +5,25 @@ var data = [
   {
     comment: 'simple string',
     input: 'Hello World!',
-    lexed: [{ type: 'text', value: 'Hello World!' }],
+    parsed: [{ type: 'text', value: 'Hello World!' }],
     sane: true,
-    snippets: [{ text: 'Hello World!', tags: [] }],
+    snippets: [{ type: 'text', value: 'Hello World!', tags: [] }],
     cst: [{ type: 'text', value: 'Hello World!' }],
     recode: 'Hello World!'
   },
   {
     comment: 'simple string with newline',
     input: 'Hello\nWorld!',
-    lexed: [
+    parsed: [
       { type: 'text', value: 'Hello' },
       { type: 'newline', value: '\n' },
       { type: 'text', value: 'World!' }
     ],
     sane: true,
     snippets: [
-      { text: 'Hello', tags: [] },
-      { text: '\n', tags: [] },
-      { text: 'World!', tags: [] }
+      { type: 'text', value: 'Hello', tags: [] },
+      { type: 'text', value: '\n', tags: [] },
+      { type: 'text', value: 'World!', tags: [] }
     ],
     cst: [{ type: 'text', value: 'Hello\nWorld!' }],
     recode: 'Hello\nWorld!'
@@ -31,33 +31,33 @@ var data = [
   {
     comment: 'simple string with a tag',
     input: '[b]Hello World![/b]',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: 'b' },
       { type: 'text', value: 'Hello World!' },
       { type: 'close-tag', value: 'b' }
     ],
     sane: true,
-    snippets: [{ text: 'Hello World!', tags: ['b'] }],
+    snippets: [{ type: 'text', value: 'Hello World!', tags: ['b'] }],
     cst: [{ type: 'tag', value: 'b', children: [{ type: 'text', value: 'Hello World!' }] }],
     recode: '[b]Hello World![/b]'
   },
   {
     comment: 'simple string with a weird tag',
     input: '[[b]Hello World![/[b]',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: '[b' },
       { type: 'text', value: 'Hello World!' },
       { type: 'close-tag', value: '[b' }
     ],
     sane: true,
-    snippets: [{ text: 'Hello World!', tags: ['[b'] }],
+    snippets: [{ type: 'text', value: 'Hello World!', tags: ['[b'] }],
     cst: [{ type: 'tag', value: '[b', children: [{ type: 'text', value: 'Hello World!' }] }],
     recode: '[[b]Hello World![/[b]'
   },
   {
     comment: 'simple string with a simple tag, double closure',
     input: '[b]]Hello World![/b]]',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: 'b' },
       { type: 'text', value: ']Hello World!' },
       { type: 'close-tag', value: 'b' },
@@ -65,8 +65,8 @@ var data = [
     ],
     sane: true,
     snippets: [
-      { text: ']Hello World!', tags: ['b'] },
-      { text: ']', tags: [] }
+      { type: 'text', value: ']Hello World!', tags: ['b'] },
+      { type: 'text', value: ']', tags: [] }
     ],
     cst: [{ type: 'tag', value: 'b', children: [{ type: 'text', value: ']Hello World!' }] },
           { type: 'text', value: ']' }],
@@ -75,7 +75,7 @@ var data = [
   {
     comment: 'simple string with two tags',
     input: '[a][b]Hello World![/b][/a]',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: 'a' },
       { type: 'open-tag', value: 'b' },
       { type: 'text', value: 'Hello World!' },
@@ -83,29 +83,35 @@ var data = [
       { type: 'close-tag', value: 'a' }
     ],
     sane: true,
-    snippets: [{ text: 'Hello World!', tags: ['a', 'b'] }],
+    snippets: [{ type: 'text', value: 'Hello World!', tags: ['a', 'b'] }],
     cst: [{ type: 'tag', value: 'a', children: [
       { type: 'tag', value: 'b', children: [{ type: 'text', value: 'Hello World!' }] }
     ] }],
     recode: '[a][b]Hello World![/b][/a]'
   },
   {
-    comment: 'simple string with a tag containing whitespace',
+    comment: 'simple string with a broken tag containing whitespace',
     input: '[a b]Hello World![/a b]',
-    lexed: [
-      { type: 'open-tag', value: 'a b' },
-      { type: 'text', value: 'Hello World!' },
-      { type: 'close-tag', value: 'a b' },
+    parsed: [
+      { type: 'text', value: '[' },
+      { type: 'text', value: 'a b]Hello World!' },
+      { type: 'text', value: '[' },
+      { type: 'text', value: '/a b]' },
     ],
     sane: true,
-    snippets: [{ text: 'Hello World!', tags: ['a b'] }],
-    cst: [{ type: 'tag', value: 'a b', children: [{ type: 'text', value: 'Hello World!' }] }],
+    snippets: [
+      { type: 'text', value: '[', tags: [] },
+      { type: 'text', value: 'a b]Hello World!', tags: [] },
+      { type: 'text', value: '[', tags: [] },
+      { type: 'text', value: '/a b]', tags: [] }
+    ],
+    cst: [{ type: 'text', value: '[a b]Hello World![/a b]' }],
     recode: '[a b]Hello World![/a b]'
   },
   {
     comment: 'three strings wrapped in common and separate tags',
     input: '[a][b]Foo[/b][c]Bar[/c][d]Baz[/d][/a]',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: 'a' },
       { type: 'open-tag', value: 'b' },
       { type: 'text', value: 'Foo' },
@@ -120,9 +126,9 @@ var data = [
     ],
     sane: true,
     snippets: [
-      { text: 'Foo', tags: ['a', 'b'] },
-      { text: 'Bar', tags: ['a', 'c'] },
-      { text: 'Baz', tags: ['a', 'd'] }
+      { type: 'text', value: 'Foo', tags: ['a', 'b'] },
+      { type: 'text', value: 'Bar', tags: ['a', 'c'] },
+      { type: 'text', value: 'Baz', tags: ['a', 'd'] }
     ],
     cst: [{ type: 'tag', value: 'a', children: [
       { type: 'tag', value: 'b', children: [{ type: 'text', value: 'Foo' }] },
@@ -134,7 +140,7 @@ var data = [
   {
     comment: 'string wrapped in two tags with wrong closure',
     input: '[a][b]Foo[/a][/b]',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: 'a' },
       { type: 'open-tag', value: 'b' },
       { type: 'text', value: 'Foo' },
@@ -143,7 +149,7 @@ var data = [
     ],
     sane: false,
     snippets: [
-      { text: 'Foo', tags: ['a', 'b'] }
+      { type: 'text', value: 'Foo', tags: ['a', 'b'] }
     ],
     cst: [{ type: 'tag', value: 'a', children: [
       { type: 'tag', value: 'b', children: [{ type: 'text', value: 'Foo' }] }
@@ -153,20 +159,23 @@ var data = [
   {
     comment: 'list item',
     input: '[*] Hello World!\n',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: '*' },
       { type: 'text', value: ' Hello World!' },
       { type: 'newline', value: '\n' }
     ],
     sane: true,
-    snippets: [{ text: ' Hello World!', tags: ['*'] }],
+    snippets: [
+      { type: 'text', value: ' Hello World!', tags: ['*'] },
+      { type: 'close', value: '\n', tags: ['*'] }
+    ],
     cst: [{ type: 'tag', value: '*', children: [{ type: 'text', value: ' Hello World!' }] }],
     recode: '[*] Hello World!\n'
   },
   {
     comment: 'two messed up tag closures',
     input: '[a]Hello [b]cruel[/a] World![/b]',
-    lexed: [
+    parsed: [
       { type: 'open-tag', value: 'a' },
       { type: 'text', value: 'Hello ' },
       { type: 'open-tag', value: 'b' },
@@ -177,12 +186,11 @@ var data = [
     ],
     sane: false,
     snippets: [
-      { text: 'Hello ', tags: ['a'] },
-      { text: 'cruel', tags: ['a', 'b'] },
-      { text: ' World!', tags: ['b'] }
+      { type: 'text', value: 'Hello ', tags: ['a'] },
+      { type: 'text', value: 'cruel', tags: ['a', 'b'] },
+      { type: 'text', value: ' World!', tags: ['b'] }
     ],
-    cst:
-    [
+    cst: [
       { type: 'tag', value: 'a', children: [
         { type: 'text', value: 'Hello ' },
         { type: 'tag', value: 'b', children: [ { type: 'text', value: 'cruel' } ] }
@@ -191,12 +199,113 @@ var data = [
     ],
     recode: '[a]Hello [b]cruel[/b][/a][b] World![/b]'
   },
+  {
+    comment: 'messed up tag closure within list items',
+    input: '[*] [a]Hello\n[*] cruel[/a]\n[*] World!\n',
+    parsed: [
+      { type: 'open-tag', value: '*' },
+      { type: 'text', value: ' ' },
+      { type: 'open-tag', value: 'a' },
+      { type: 'text', value: 'Hello' },
+      { type: 'newline', value: '\n' },
+      { type: 'open-tag', value: '*' },
+      { type: 'text', value: ' cruel' },
+      { type: 'close-tag', value: 'a' },
+      { type: 'newline', value: '\n' },
+      { type: 'open-tag', value: '*' },
+      { type: 'text', value: ' World!' },
+      { type: 'newline', value: '\n' }
+    ],
+    sane: false,
+    snippets: [
+      { type: 'text', value: ' ', tags: ['*'] },
+      { type: 'text', value: 'Hello', tags: ['*', 'a'] },
+      { type: 'close', value: '\n', tags: ['*', 'a'] },
+      { type: 'text', value: ' cruel', tags: ['a', '*'] },
+      { type: 'close', value: '\n', tags: ['*'] },
+      { type: 'text', value: ' World!', tags: ['*'] },
+      { type: 'close', value: '\n', tags: ['*'] }
+    ],
+    cst: [
+      { type: 'tag', value: '*', children: [
+        { type: 'text', value: ' ' },
+        { type: 'tag', value: 'a', children: [{ type: 'text', value: 'Hello' }] }
+      ] },
+      { type: 'tag', value: '*', children: [
+        { type: 'tag', value: 'a', children: [{ type: 'text', value: ' cruel' }] }
+      ] },
+      { type: 'tag', value: '*', children: [
+        { type: 'text', value: ' World!' }
+      ] }
+    ],
+    recode: '[*] [a]Hello[/a]\n[*][a] cruel[/a]\n[*] World!\n'
+  },
+  {
+    comment: 'identical tag merger',
+    input: '[a]Hello[/a][a] World![/a]',
+    parsed: [
+      { type: 'open-tag', value: 'a' },
+      { type: 'text', value: 'Hello' },
+      { type: 'close-tag', value: 'a' },
+      { type: 'open-tag', value: 'a' },
+      { type: 'text', value: ' World!' },
+      { type: 'close-tag', value: 'a' }     
+    ],
+    sane: true,
+    snippets: [
+      { type: 'text', value: 'Hello', tags: ['a'] },
+      { type: 'text', value: ' World!', tags: ['a'] }
+    ],
+    cst: [{ type: 'tag', value: 'a', children: [{ type: 'text', value: 'Hello World!' }] }],
+    recode: '[a]Hello World![/a]'
+  },
+  {
+    comment: 'identical line tag non-merger',
+    input: '[*] Hello\n[*] World!\n',
+    parsed: [
+      { type: 'open-tag', value: '*' },
+      { type: 'text', value: ' Hello' },
+      { type: 'newline', value: '\n' },
+      { type: 'open-tag', value: '*' },
+      { type: 'text', value: ' World!' },
+      { type: 'newline', value: '\n' }
+    ],
+    sane: true,
+    snippets: [
+      { type: 'text', value: ' Hello', tags: ['*'] },
+      { type: 'close', value: '\n', tags: ['*'] },
+      { type: 'text', value: ' World!', tags: ['*'] },
+      { type: 'close', value: '\n', tags: ['*'] }
+    ],
+    cst: [
+      { type: 'tag', value: '*', children: [{ type: 'text', value: ' Hello' }] },
+      { type: 'tag', value: '*', children: [{ type: 'text', value: ' World!' }] }
+    ],
+    recode: '[*] Hello\n[*] World!\n'
+  },
+  // {
+  //   comment: 'simple attribute',
+  //   input: '[a=foo]bar[/a]',
+  //   parsed: [
+  //     { type: 'open-tag', value: ['a', 'foo'] },
+  //     { type: 'text', value: 'bar' },
+  //     { type: 'close-tag', value: 'a' }
+  //   ],
+  //   sane: true,
+  //   snippets: [
+  //     { type: 'text', value: '...', tags: ['...'] }
+  //   ],
+  //   cst: [
+  //     { type: '...', value: '...' }
+  //   ],
+  //   recode: '[a=foo]bar[/a]'
+  // }
   // {
   //   comment: '...',
   //   input: '...',
-  //   lexed: [{ type: '...', value: '...' }],
+  //   parsed: [{ type: '...', value: '...' }],
   //   sane: true,
-  //   snippets: [{ text: '...', tags: ['...'] }],
+  //   snippets: [{ type: 'text', value: '...', tags: ['...'] }],
   //   cst: [{ type: '...', value: '...' }],
   //   recode: '...'
   // },
@@ -210,9 +319,9 @@ test('basic', function (t) {
 data.forEach(function (item) {
   test(item.comment, function (t) {
     var api = bbfy.api,
-        lex = api.lex,
         parse = api.parse,
-        sanitize = api.sanitize;
+        sanitize = api.sanitize,
+        cst = api.cst;
     var result;
     var convert = bbfy.converter({
       rules: bbfy.ruleSets.strip,
@@ -225,15 +334,15 @@ data.forEach(function (item) {
 
     t.plan(6);
 
-    result = lex(item.input);
-    t.ok(result.status, 'lexing');
-    t.deepEqual(result.value, item.lexed, 'lexing content');
+    result = parse(item.input);
+    t.ok(result.status, 'parsing');
+    t.deepEqual(result.value, item.parsed, 'parsing content');
 
-    result = sanitize(item.lexed);  
+    result = sanitize(item.parsed);
     t.equal(result.sane, item.sane, 'sanity check');
     t.deepEqual(result.snippets, item.snippets, 'sanitizing content');
 
-    t.deepEqual(parse(item.snippets).children, item.cst, 'syntrax tree');
+    t.deepEqual(cst(item.snippets).children, item.cst, 'syntrax tree');
     t.equal(convert(item.input), item.recode, 'transforming (recode)');
   });
 });
