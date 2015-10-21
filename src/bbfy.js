@@ -32,16 +32,10 @@ function parse (input) {
   const raw = regex(/[^[\n]+/).map(tokenizer('text'));
   const garbage = regex(/[\[\] ]/).map(tokenizer('text'));
   
-  // const simple_tag = seq(name);
-  // const assignment = seq(name, attribute);
-  // const complex_tag = seq(name.skip(whitespace), assignment.skip(optWhitespace).many());
-  // const tag = complex_tag.or(assignment).or(simple_tag).map((tag, ...args) => {
-  //   if (args.length === 1) {
-  //     return { type: 'tag-assigment', value: , };
-  //   }
-  // });
-
-  const tag = name;
+  const simple_tag = seq(name);
+  const assignment = seq(name, attribute);
+  const complex_tag = seq(name.skip(whitespace), assignment.skip(optWhitespace).many().map(_.object));
+  const tag = complex_tag.or(assignment).or(simple_tag).map(([tag, assignments]) => ({ tag: tag, assignments: assignments }));
   const open_tag = open_bracket
           .then(tag)
           .skip(close_bracket)
@@ -61,6 +55,7 @@ function parse (input) {
 function sanitize (lexemes, { lineTags = defaults.lineTags } = defaults) {
   const { tags, snippets, sane } = lexemes.reduce((acc, { type, value, children }) => {
     const { tags, snippets, sane } = acc;
+    const tag_names = _.pluck(tags, 'tag');
 
     function add_item (acc, type, value) {
       return _.extend({}, acc, { snippets: snippets.concat([{
@@ -82,11 +77,11 @@ function sanitize (lexemes, { lineTags = defaults.lineTags } = defaults) {
       return _.extend({}, acc, { tags: [value].concat(tags) });
     }
     else if (type === 'close-tag') {
-      const index = tags.indexOf(value);
+      const index = tag_names.indexOf(value);
       return (index === -1) ? _.extend({}, acc, { sane: false }) : close_tag(acc, index);
     }
     else if (type === 'newline') {
-      const index = _.findIndex(tags, (tag) => _.contains(lineTags, tag));
+      const index = _.findIndex(tag_names, (tag) => _.contains(lineTags, tag));
       return (index === -1)
         ? add_item(acc, 'text', value)
         : add_item(close_tag(acc, index), 'close', value);
@@ -107,12 +102,12 @@ function cst (snippets, { lineTags = defaults.lineTags } = defaults) {
   function rec (snippets) {
     if (snippets.length === 0) { return []; }
     const { acc, result, tag } = snippets.reduce(({ acc, tag, result }, { type, value, tags }) => {
-      const [next_tag, ...rest] = _.sortBy(tags, (tag) => _.contains(lineTags, tag) ? 0 : 1);
-      
+      const [next_tag, ...rest] = _.sortBy(tags, (tag) => _.contains(lineTags, tag.tag) ? 0 : 1);
+
       if (type === 'close') {
         return { tag: next_tag, acc: [], result: result.concat([node(tag, acc)]) };
       }
-      else if (acc.length === 0 || tag === next_tag) {
+      else if (acc.length === 0 || _.isEqual(tag, next_tag)) {
         return { tag: tag, acc: acc.concat([{ type: 'text', value: value, tags: rest }]), result: result };
       }
       else {
@@ -127,8 +122,8 @@ function cst (snippets, { lineTags = defaults.lineTags } = defaults) {
 }
 
 function transform (cst, rules, unsupported) {
-  function convert (text, tag) {
-    return (rules[tag] || unsupported)(text, tag);
+  function convert (text, { tag, assignments }) {
+    return (rules[tag] || unsupported)(text, tag, assignments);
   }
   
   function rec ({ type, value, children }) {
