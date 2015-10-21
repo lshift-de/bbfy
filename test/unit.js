@@ -1,3 +1,5 @@
+'use strict';
+
 var test = require('tape-catch');
 var bbfy = require('../target/bbfy.js');
 
