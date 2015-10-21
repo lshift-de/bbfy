@@ -5,6 +5,10 @@ var tag = function (tag, assignments) {
   return { tag: tag, assignments: assignments };
 };
 
+var cst = function (data) {
+  return { type: 'root', children: data };
+};
+
 var data = [
   {
     comment: 'simple string',
@@ -12,7 +16,7 @@ var data = [
     parsed: [{ type: 'text', value: 'Hello World!' }],
     sane: true,
     snippets: [{ type: 'text', value: 'Hello World!', tags: [] }],
-    cst: [{ type: 'text', value: 'Hello World!' }],
+    cst: cst([{ type: 'text', value: 'Hello World!' }]),
     recode: 'Hello World!'
   },
 
@@ -30,7 +34,7 @@ var data = [
       { type: 'text', value: '\n', tags: [] },
       { type: 'text', value: 'World!', tags: [] }
     ],
-    cst: [{ type: 'text', value: 'Hello\nWorld!' }],
+    cst: cst([{ type: 'text', value: 'Hello\nWorld!' }]),
     recode: 'Hello\nWorld!'
   },
 
@@ -44,7 +48,7 @@ var data = [
     ],
     sane: true,
     snippets: [{ type: 'text', value: 'Hello World!', tags: [tag('b')] }],
-    cst: [{ type: 'tag', value: tag('b'), children: [{ type: 'text', value: 'Hello World!' }] }],
+    cst: cst([{ type: 'tag', value: tag('b'), children: [{ type: 'text', value: 'Hello World!' }] }]),
     recode: '[b]Hello World![/b]'
   },
 
@@ -58,7 +62,7 @@ var data = [
     ],
     sane: true,
     snippets: [{ type: 'text', value: 'Hello World!', tags: [tag('[b')] }],
-    cst: [{ type: 'tag', value: tag('[b'), children: [{ type: 'text', value: 'Hello World!' }] }],
+    cst: cst([{ type: 'tag', value: tag('[b'), children: [{ type: 'text', value: 'Hello World!' }] }]),
     recode: '[[b]Hello World![/[b]'
   },
 
@@ -76,8 +80,8 @@ var data = [
       { type: 'text', value: ']Hello World!', tags: [tag('b')] },
       { type: 'text', value: ']', tags: [] }
     ],
-    cst: [{ type: 'tag', value: tag('b'), children: [{ type: 'text', value: ']Hello World!' }] },
-          { type: 'text', value: ']' }],
+    cst: cst([{ type: 'tag', value: tag('b'), children: [{ type: 'text', value: ']Hello World!' }] },
+              { type: 'text', value: ']' }]),
     recode: '[b]]Hello World![/b]]'
   },
 
@@ -96,9 +100,9 @@ var data = [
       tag('a'),
       tag('b')
     ] }],
-    cst: [{ type: 'tag', value: tag('a'), children: [
+    cst: cst([{ type: 'tag', value: tag('a'), children: [
       { type: 'tag', value: tag('b'), children: [{ type: 'text', value: 'Hello World!' }] }
-    ] }],
+    ] }]),
     recode: '[a][b]Hello World![/b][/a]'
   },
 
@@ -118,7 +122,7 @@ var data = [
       { type: 'text', value: '[', tags: [] },
       { type: 'text', value: '/a b]', tags: [] }
     ],
-    cst: [{ type: 'text', value: '[a b]Hello World![/a b]' }],
+    cst: cst([{ type: 'text', value: '[a b]Hello World![/a b]' }]),
     recode: '[a b]Hello World![/a b]'
   },
 
@@ -144,13 +148,13 @@ var data = [
       { type: 'text', value: 'Bar', tags: [tag('a'), tag('c')] },
       { type: 'text', value: 'Baz', tags: [tag('a'), tag('d')] }
     ],
-    cst: [
+    cst: cst([
       { type: 'tag', value: tag('a'), children: [
         { type: 'tag', value: tag('b'), children: [{ type: 'text', value: 'Foo' }] },
         { type: 'tag', value: tag('c'), children: [{ type: 'text', value: 'Bar' }] },
         { type: 'tag', value: tag('d'), children: [{ type: 'text', value: 'Baz' }] }
       ] }
-    ],
+    ]),
     recode: '[a][b]Foo[/b][c]Bar[/c][d]Baz[/d][/a]'
   },
 
@@ -168,9 +172,9 @@ var data = [
     snippets: [
       { type: 'text', value: 'Foo', tags: [tag('a'), tag('b')] }
     ],
-    cst: [{ type: 'tag', value: tag('a'), children: [
+    cst: cst([{ type: 'tag', value: tag('a'), children: [
       { type: 'tag', value: tag('b'), children: [{ type: 'text', value: 'Foo' }] }
-    ] }],
+    ] }]),
     recode: '[a][b]Foo[/b][/a]'
   },
 
@@ -187,7 +191,7 @@ var data = [
       { type: 'text', value: ' Hello World!', tags: [tag('*')] },
       { type: 'close', value: '\n', tags: [tag('*')] }
     ],
-    cst: [{ type: 'tag', value: tag('*'), children: [{ type: 'text', value: ' Hello World!' }] }],
+    cst: cst([{ type: 'tag', value: tag('*'), children: [{ type: 'text', value: ' Hello World!' }] }]),
     recode: '[*] Hello World!\n'
   },
 
@@ -209,13 +213,13 @@ var data = [
       { type: 'text', value: 'cruel', tags: [tag('a'), tag('b')] },
       { type: 'text', value: ' World!', tags: [tag('b')] }
     ],
-    cst: [
+    cst: cst([
       { type: 'tag', value: tag('a'), children: [
         { type: 'text', value: 'Hello ' },
         { type: 'tag', value: tag('b'), children: [ { type: 'text', value: 'cruel' } ] }
       ] },
       { type: 'tag', value: tag('b'), children: [ { type: 'text', value: ' World!' } ] }
-    ],
+    ]),
     recode: '[a]Hello [b]cruel[/b][/a][b] World![/b]'
   },
 
@@ -246,7 +250,7 @@ var data = [
       { type: 'text', value: ' World!', tags: [tag('*')] },
       { type: 'close', value: '\n', tags: [tag('*')] }
     ],
-    cst: [
+    cst: cst([
       { type: 'tag', value: tag('*'), children: [
         { type: 'text', value: ' ' },
         { type: 'tag', value: tag('a'), children: [{ type: 'text', value: 'Hello' }] }
@@ -257,8 +261,47 @@ var data = [
       { type: 'tag', value: tag('*'), children: [
         { type: 'text', value: ' World!' }
       ] }
-    ],
+    ]),
     recode: '[*] [a]Hello[/a]\n[*][a] cruel[/a]\n[*] World!\n'
+  },
+
+  {
+    comment: 'messed up tag closure starting outside list items',
+    input: '[a][*] Hello\n[*] cruel[/a]\n[*] World!\n',
+    parsed: [
+      { type: 'open-tag', value: tag('a') },
+      { type: 'open-tag', value: tag('*') },
+      { type: 'text', value: ' Hello' },
+      { type: 'newline', value: '\n' },
+      { type: 'open-tag', value: tag('*') },
+      { type: 'text', value: ' cruel' },
+      { type: 'close-tag', value: 'a' },
+      { type: 'newline', value: '\n' },
+      { type: 'open-tag', value: tag('*') },
+      { type: 'text', value: ' World!' },
+      { type: 'newline', value: '\n' }
+    ],
+    sane: false,
+    snippets: [
+      { type: 'text', value: ' Hello', tags: [tag('a'), tag('*')] },
+      { type: 'close', value: '\n', tags: [tag('a'), tag('*')] },
+      { type: 'text', value: ' cruel', tags: [tag('a'), tag('*')] },
+      { type: 'close', value: '\n', tags: [tag('*')] },
+      { type: 'text', value: ' World!', tags: [tag('*')] },
+      { type: 'close', value: '\n', tags: [tag('*')] }
+    ],
+    cst: cst([
+      { type: 'tag', value: tag('*'), children: [
+        { type: 'tag', value: tag('a'), children: [{ type: 'text', value: ' Hello' }] }
+      ] },
+      { type: 'tag', value: tag('*'), children: [
+        { type: 'tag', value: tag('a'), children: [{ type: 'text', value: ' cruel' }] }
+      ] },
+      { type: 'tag', value: tag('*'), children: [
+        { type: 'text', value: ' World!' }
+      ] }
+    ]),
+    recode: '[*][a] Hello[/a]\n[*][a] cruel[/a]\n[*] World!\n'
   },
 
   {
@@ -277,7 +320,7 @@ var data = [
       { type: 'text', value: 'Hello', tags: [tag('a')] },
       { type: 'text', value: ' World!', tags: [tag('a')] }
     ],
-    cst: [{ type: 'tag', value: tag('a'), children: [{ type: 'text', value: 'Hello World!' }] }],
+    cst: cst([{ type: 'tag', value: tag('a'), children: [{ type: 'text', value: 'Hello World!' }] }]),
     recode: '[a]Hello World![/a]'
   },
 
@@ -299,10 +342,10 @@ var data = [
       { type: 'text', value: ' World!', tags: [tag('*')] },
       { type: 'close', value: '\n', tags: [tag('*')] }
     ],
-    cst: [
+    cst: cst([
       { type: 'tag', value: tag('*'), children: [{ type: 'text', value: ' Hello' }] },
       { type: 'tag', value: tag('*'), children: [{ type: 'text', value: ' World!' }] }
-    ],
+    ]),
     recode: '[*] Hello\n[*] World!\n'
   },
 
@@ -316,11 +359,11 @@ var data = [
     ],
     sane: true,
     snippets: [{ type: 'text', value: 'bar', tags: [{ tag: 'a', assignments: 'foo' }] }],
-    cst: [
+    cst: cst([
       { type: 'tag', value: { tag: 'a', assignments: 'foo' }, children: [
         { type: 'text', value: 'bar' }
       ] }
-    ],
+    ]),
     recode: '[a=foo]bar[/a]'
   },
 
@@ -334,11 +377,11 @@ var data = [
     ],
     sane: true,
     snippets: [{ type: 'text', value: 'Hello World!', tags: [{ tag: 'a', assignments: { foo: 'bar', baz: 'bop'} }] }],
-    cst: [
+    cst: cst([
       { type: 'tag', value: { tag: 'a', assignments: { foo: 'bar', baz: 'bop'} }, children: [
         { type: 'text', value: 'Hello World!' }
       ] }
-    ],
+    ]),
     recode: '[a foo=bar baz=bop]Hello World![/a]'
   },
   // {
@@ -362,30 +405,34 @@ data.forEach(function (item) {
     var api = bbfy.api,
         parse = api.parse,
         sanitize = api.sanitize,
-        cst = api.cst;
+        cst = api.cst,
+        transform = api.transform;
     var result;
+    var rules = bbfy.ruleSets.strip;
+    var unsupported = function (text, tag, assignment) {
+      if (tag === '*') {
+        return '[' + tag + ']' + text + '\n';
+      }
+      else if (assignment === void 0) {
+        return '[' + tag + ']' + text + '[/' + tag + ']';
+      }
+      else if (typeof assignment === 'string') {
+        return '[' + tag + '=' + assignment + ']' + text + '[/' + tag + ']';
+      }
+      else {
+        var keyvals = [tag].concat(Object.keys(assignment).map(function (key) {
+          return key + '=' + assignment[key];
+        })).join(' ');
+        return '[' + keyvals + ']' + text + '[/' + tag + ']';
+      }
+    };
+    
     var convert = bbfy.converter({
       rules: bbfy.ruleSets.strip,
-      unsupported: function (text, tag, assignment) {
-        if (tag === '*') {
-          return '[' + tag + ']' + text + '\n';
-        }
-        else if (assignment === void 0) {
-          return '[' + tag + ']' + text + '[/' + tag + ']';
-        }
-        else if (typeof assignment === 'string') {
-          return '[' + tag + '=' + assignment + ']' + text + '[/' + tag + ']';
-        }
-        else {
-          var keyvals = [tag].concat(Object.keys(assignment).map(function (key) {
-            return key + '=' + assignment[key];
-          })).join(' ');
-          return '[' + keyvals + ']' + text + '[/' + tag + ']';
-        }
-      }
+      unsupported: unsupported
     });
 
-    t.plan(6);
+    t.plan(7);
 
     result = parse(item.input);
     t.ok(result.status, 'parsing');
@@ -395,7 +442,8 @@ data.forEach(function (item) {
     t.equal(result.sane, item.sane, 'sanity check');
     t.deepEqual(result.snippets, item.snippets, 'sanitizing content');
 
-    t.deepEqual(cst(item.snippets).children, item.cst, 'syntrax tree');
-    t.equal(convert(item.input), item.recode, 'transforming (recode)');
+    t.deepEqual(cst(item.snippets), item.cst, 'syntrax tree');
+    t.equal(transform(item.cst, rules, unsupported), item.recode, 'transforming (recode)');
+    t.equal(convert(item.input), item.recode, 'to-down conversion (recode)');
   });
 });
