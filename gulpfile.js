@@ -20,7 +20,7 @@ gulp.task('umd', function () {
 });
 
 gulp.task('test', ['umd'], function () {
-  return gulp.src('test/*.js')
+  return gulp.src(['test/unit.js', 'test/html.js'])
     .pipe(tape({
       reporter: tapColorize()
     }));

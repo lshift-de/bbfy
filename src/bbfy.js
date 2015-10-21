@@ -5,10 +5,46 @@
 const { regex, string, alt, seq, whitespace, optWhitespace, fail, lazy } = parsimmon;
 const _ = underscore;
 
+function translate_tag (tag) {
+  return (text) => `<${tag}>${text}</${tag}>`;
+}
+
+function span (style, text) {
+  return `<span style="${style}">${text}</span>`;
+}
+
 const rule_sets = {
   strip: {},
   html: {
-    b (text) { return `<b>${text}</b>`; }
+    b: translate_tag('b'),
+    i: translate_tag('i'),
+    u: translate_tag('u'),
+    s: translate_tag('s'),
+    color (text, tag, color = '') {
+      return color.match(/^(#[0-9a-f]{6}|\w+)$/i) ? span(`color: ${color.toLowerCase()};`, text) : text;
+    },
+    font (text, tag, font = '') {
+      return font.match(/^\w+$/) ? span(`font-family: ${font};`, text) : text;
+    },
+    size (text, tag, size = '') {
+      return size.match(/^\d+$/) ? span(`font-size: ${size}px;`, text) : text;
+    },
+    url (text, tag, url = '') {
+      return url.match(/^https?:\/\/.+/) ? `<a href="${url}">${text}</a>` : text;
+    },
+    img (url, tag, args) {
+      if (url.match(/^https?:\/\/.+/)) {
+        if (args) {
+          const [width = '', height = ''] = (typeof args === 'string')
+                  ? (/(\d+)x(\d+)/.exec(args) || []).slice(1)
+                  : [args.width, args.height];
+          if (width.match(/^\d+$/) && height.match(/^\d+$/)) {
+            return `<img src="${url}" width="${width}" height="${height}"/>`;
+          }
+        }
+        return `<img src="${url}"/>`;
+      } else { return ''; }
+    }
   }
 };
 
