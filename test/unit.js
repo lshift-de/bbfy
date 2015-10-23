@@ -446,6 +446,6 @@ data.forEach(function (item) {
 
     t.deepEqual(cst(item.snippets), item.cst, 'syntrax tree');
     t.equal(transform(item.cst, rules, unsupported), item.recode, 'transforming (recode)');
-    t.equal(convert(item.input), item.recode, 'to-down conversion (recode)');
+    t.equal(convert(item.input), item.recode, 'top-down conversion (recode)');
   });
 });
