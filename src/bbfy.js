@@ -1,9 +1,8 @@
 /* -*- mode: js2; -*- */
 'use strict'; // Not required in ES6, but will appear in generated ES5 code
 
-// import { regex, string, alt } from 'parsimmon';
-const { regex, string, alt, seq, whitespace, optWhitespace, fail, lazy } = parsimmon;
-const _ = underscore;
+import { regex, string, alt, seq, whitespace, optWhitespace, fail, lazy } from 'parsimmon';
+import _ from 'underscore';
 
 function translate_tag (tag) {
   return (text) => `<${tag}>${text}</${tag}>`;
@@ -183,7 +182,7 @@ function transform (cst, rules, unsupported) {
   return rec(cst);
 }
 
-const Bbfy = {
+const bbfy = {
   converter (config = defaults) {
     const { rules = defaults.rules, unsupported = defaults.unsupported } = config;
     return (text) => {
@@ -195,4 +194,6 @@ const Bbfy = {
   options: defaults,
   ruleSets: rule_sets,
   api: { parse: parse, transform: transform, sanitize: sanitize, cst: cst }
-}
+};
+
+export default bbfy;

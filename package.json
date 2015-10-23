@@ -2,7 +2,7 @@
   "name": "bbfy",
   "version": "1.0.0",
   "description": "BBCode Converter",
-  "main": "index.js",
+  "main": "target/bbfy.js",
   "scripts": {
     "test": "node_modules/gulp/bin/gulp.js test"
   },
@@ -13,11 +13,12 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "gulp": "^3.9.0",
-    "gulp-es6-transpiler": "^1.0.1",
     "gulp-tape": "0.0.4",
-    "gulp-umd": "^0.2.0",
     "tap-colorize": "^1.2.0",
-    "tape-catch": "~1.0.4"
+    "tape-catch": "~1.0.4",
+    "gulp-babel": "~5.3.0",
+    "gulp-sourcemaps": "~1.6.0",
+    "gulp-concat": "~2.6.0"
   },
   "dependencies": {
     "parsimmon": "^0.7.0",
