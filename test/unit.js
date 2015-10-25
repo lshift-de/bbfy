@@ -355,14 +355,14 @@ var data = [
     comment: 'simple attribute',
     input: '[a=foo]bar[/a]',
     parsed: [
-      { type: 'open-tag', value: { tag: 'a', assignments: 'foo' } },
+      { type: 'open-tag', value: tag('a', 'foo') },
       { type: 'text', value: 'bar' },
       { type: 'close-tag', value: 'a' }
     ],
     sane: true,
-    snippets: [{ type: 'text', value: 'bar', tags: [{ tag: 'a', assignments: 'foo' }] }],
+    snippets: [{ type: 'text', value: 'bar', tags: [tag('a', 'foo')] }],
     cst: cst([
-      { type: 'tag', value: { tag: 'a', assignments: 'foo' }, children: [
+      { type: 'tag', value: tag('a', 'foo'), children: [
         { type: 'text', value: 'bar' }
       ] }
     ]),
@@ -373,14 +373,14 @@ var data = [
     comment: 'complex attribute',
     input: '[a foo=bar baz=bop]Hello World![/a]',
     parsed: [
-      { type: 'open-tag', value: { tag: 'a', assignments: { foo: 'bar', baz: 'bop'} } },
+      { type: 'open-tag', value: tag('a', { foo: 'bar', baz: 'bop'}) },
       { type: 'text', value: 'Hello World!' },
       { type: 'close-tag', value: 'a' }
     ],
     sane: true,
-    snippets: [{ type: 'text', value: 'Hello World!', tags: [{ tag: 'a', assignments: { foo: 'bar', baz: 'bop'} }] }],
+    snippets: [{ type: 'text', value: 'Hello World!', tags: [tag('a', { foo: 'bar', baz: 'bop'})] }],
     cst: cst([
-      { type: 'tag', value: { tag: 'a', assignments: { foo: 'bar', baz: 'bop'} }, children: [
+      { type: 'tag', value: tag('a', { foo: 'bar', baz: 'bop'}), children: [
         { type: 'text', value: 'Hello World!' }
       ] }
     ]),
