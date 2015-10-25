@@ -2,10 +2,10 @@ var gulp = require('gulp');
 var babel = require('gulp-babel');
 var sourcemaps = require('gulp-sourcemaps');
 var concat = require('gulp-concat');
-
 var tape = require('gulp-tape');
 var tapColorize = require('tap-colorize');
 var exec = require('child_process').exec;
+var webpack = require('gulp-webpack');
 
 gulp.task('compile', function () {
   return gulp.src('src/*.js')
@@ -29,6 +29,19 @@ gulp.task('tape', ['compile'], function (cb) {
     console.log(err);
     cb();
   });
+});
+
+gulp.task('bundle', ['compile'], function () {
+  return gulp.src('target/bbfy.js')
+    .pipe(webpack({
+      module: {
+        preLoaders: [
+          { test: /\.json$/, loader: 'json'},
+        ]
+      },
+      output: { filename: 'bbfy.browser.js' }
+    }))
+    .pipe(gulp.dest('target'));
 });
 
 gulp.task('watch', ['tape'], function (cb) {

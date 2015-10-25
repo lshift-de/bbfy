@@ -3,14 +3,15 @@
     <head>
         <meta charset="utf-8" /> 
         <title>bbfy test page</title>
-        <script src="../node_modules/requirejs/require.js"></script>
+        <!-- <script src="../node_modules/requirejs/require.js"></script> -->
+        <script src="../target/bbfy.browser.js"></script>
     </head>
     <body>
         <h1>bbfy test page</h1>
         <textarea id="input" rows="25" cols="80">[b]Write BBCode here.[/b]</textarea>
         <textarea id="output" rows="25" cols="80" readonly="true"></textarea>
         <div id="html"></div>
-        <script>
+        <script> /*
             require.config({
               baseUrl: '../',
               paths: {
@@ -22,8 +23,8 @@
                 parsimmon: { exports: 'Parsimmon' }
               }
             });
-            
-            require(['bbfy'], function (bbfy) {
+*/            
+            //require(['bbfy'], function (bbfy) {
               var convert = bbfy.converter();
               var input = document.getElementById('input');
               var output = document.getElementById('output');
@@ -40,7 +41,7 @@
               });
 
               update(input.value);
-            });
+            //});
         </script>
     </body>
 </html>
