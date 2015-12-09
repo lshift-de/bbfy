@@ -91,13 +91,13 @@ function sanitize (lexemes, { lineTags = defaults.lineTags } = defaults) {
   const { result, sane, tags } = lexemes.reduce((acc, { type, value }) => {
     const { result, sane, tags } = acc;
 
-    function close (index, data) {
+    function close (index, close_value, data) {
       if (index === -1) {
         return _.extend({}, acc, data);
       }
       else if (index === 0) {
         return _.extend({}, acc, {
-          result: result.concat([{ type: type, value: value }]),
+          result: result.concat([close_value]),
           tags: tags.slice(1)
         });
       }
@@ -123,10 +123,11 @@ function sanitize (lexemes, { lineTags = defaults.lineTags } = defaults) {
       });
     }
     else if (type === 'close-tag') {
-      return close(tags.indexOf(value), { sane: false });
+      return close(tags.indexOf(value), { type: type, value: value }, { sane: false });
     }
     else if (type === 'newline') {
       return close(_.findIndex(tags, (tag) => _.contains(lineTags, tag)),
+                   { type: 'close-tag', value: tags[0] },
                    { result: result.concat([{ type: 'text', value: value }]) });
     }
     else { throw 'Unsupported lexeme ' + type; };
