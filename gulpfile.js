@@ -9,6 +9,7 @@ var exec = require('child_process').exec;
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var browserify = require('browserify');
+var uglify = require('gulp-uglify');
 
 gulp.task('compile', function () {
   return gulp.src('src/*.js')
@@ -38,6 +39,10 @@ gulp.task('bundle', ['compile'], function () {
   return browserify({ entries: ['target/bbfy.js'], standalone: 'bbfy' })
     .bundle()
     .pipe(source('bbfy.browser.js'))
+    .pipe(buffer())
+    .pipe(sourcemaps.init())
+    .pipe(uglify())
+    .pipe(sourcemaps.write('.'))
     .on('error', util.log)
     .pipe(gulp.dest('target'));
 });
