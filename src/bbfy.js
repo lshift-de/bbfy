@@ -88,78 +88,76 @@ function parse (input) {
 }
 
 function sanitize (lexemes, { lineTags = defaults.lineTags } = defaults) {
-  const { tags, snippets, sane } = lexemes.reduce((acc, { type, value, children }) => {
-    const { tags, snippets, sane } = acc;
-    const tag_names = _.pluck(tags, 'tag');
+  const { result, sane, tags } = lexemes.reduce((acc, { type, value }) => {
+    const { result, sane, tags } = acc;
 
-    function add_item (acc, type, value) {
-      return _.extend({}, acc, { snippets: snippets.concat([{
-        type: type, value: value, tags: _.uniq(tags).reverse()
-      }]) });
-    }
-
-    function close_tag (acc, index) {
-      return _.extend({}, acc, {
-        tags: tags.slice(0, index).concat(tags.slice(index + 1)),
-        sane: sane && (index === 0)
-      });
+    function close (index, data) {
+      if (index === -1) {
+        return _.extend({}, acc, data);
+      }
+      else if (index === 0) {
+        return _.extend({}, acc, {
+          result: result.concat([{ type: type, value: value }]),
+          tags: tags.slice(1)
+        });
+      }
+      else {
+        const close = tags.slice(0, index + 1);
+        return _.extend({}, acc, {
+          result: result.concat(close.map(tag => ({ type: 'close-tag', value: tag }))),
+          tags: tags.slice(index + 1),
+          sane: false
+        });
+      }
     }
 
     if (type === 'text') {
-      return add_item(acc, 'text', value);
+      return _.extend({}, acc, { result: result.concat([{
+        type: type, value: value
+      }]) });
     }
     else if (type === 'open-tag') {
-      return _.extend({}, acc, { tags: [value].concat(tags) });
+      return _.extend({}, acc, {
+        result: result.concat([{ type: type, value: value }]),
+        tags: [value.tag].concat(tags)
+      });
     }
     else if (type === 'close-tag') {
-      const index = tag_names.indexOf(value);
-      return (index === -1) ? _.extend({}, acc, { sane: false }) : close_tag(acc, index);
+      return close(tags.indexOf(value), { sane: false });
     }
     else if (type === 'newline') {
-      const index = _.findIndex(tag_names, (tag) => _.contains(lineTags, tag));
-      return (index === -1)
-        ? add_item(acc, 'text', value)
-        : add_item(close_tag(acc, index), 'close', value);
+      return close(_.findIndex(tags, (tag) => _.contains(lineTags, tag)),
+                   { result: result.concat([{ type: 'text', value: value }]) });
     }
-    else { throw 'Unsupported lexeme ' + type; }
-  }, { tags: [], snippets: [], sane: true });
+    else { throw 'Unsupported lexeme ' + type; };
+  }, { result: [], sane: true, tags: [] });
 
-  return { snippets: snippets, sane: sane && tags.length === 0, tags: tags };
+  return { lexemes: result, sane: sane && tags.length === 0, tags: tags };
 }
 
-function cst (snippets, { lineTags = defaults.lineTags } = defaults) {
-  function node (tag, snippets) {
-    return (tag === void 0)
-      ? { type: 'text', value: _.pluck(snippets, 'value').join('') }
-      : { type: 'tag', value: tag, children: rec(snippets) };
-  }
-
-  function rec (snippets) {
-    function sort_tags (tags) {
-      return _.sortBy(tags, (tag) => _.contains(lineTags, tag.tag) ? 0 : 1);
+function cst (nodes) {
+  function rec (nodes) {
+    let rest = nodes, acc = [], node;
+    while (rest !== void 0 && rest.length > 0) {
+      [node, ...rest] = rest;
+      const { type, value } = node;
+      if (type === 'text') {
+        acc.push(node);
+      }
+      else if (type === 'open-tag') {
+        let result = rec(rest);
+        acc.push({ type: 'tag', value: value, children: result.result });
+        rest = result.rest;
+      }
+      else if (type === 'close-tag') {
+        return { result: acc, rest: rest };
+      }
     }
-    
-    if (snippets.length === 0) { return []; }
-    const start_tag = sort_tags(snippets[0].tags)[0];
-    
-    const { acc, result, tag } = snippets.reduce(({ acc, tag, result }, { type, value, tags }) => {
-      const [next_tag, ...rest] = sort_tags(tags);
 
-      if (type === 'close') {
-        return { tag: next_tag, acc: [], result: result.concat([node(tag, acc)]) };
-      }
-      else if (acc.length === 0 || _.isEqual(tag, next_tag)) {
-        return { tag: tag, acc: acc.concat([{ type: 'text', value: value, tags: rest }]), result: result };
-      }
-      else {
-        return { tag: next_tag, acc: [{ type: 'text', value: value, tags: rest }], result: result.concat([node(tag, acc)]) };
-      }
-    }, { acc: [], result: [], tag: start_tag });
-
-    return acc.length > 0 ? result.concat([node(tag, acc)]) : result;
+    return { result: acc, rest: rest };
   }
 
-  return { type: 'root', children: rec(snippets) };
+  return { type: 'root', children: rec(nodes).result };
 }
 
 function transform (cst, rules, unsupported) {
@@ -188,7 +186,7 @@ const bbfy = {
     return (text) => {
       const result = parse(text, config);
       if (!result.status) { throw parsimmon.formatError(text, result); }
-      return transform(cst(sanitize(result.value, config).snippets), rules, unsupported);
+      return transform(cst(sanitize(result.value, config).lexemes), rules, unsupported);
     };
   },
   options: defaults,
