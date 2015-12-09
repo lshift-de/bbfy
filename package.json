@@ -4,7 +4,9 @@
   "description": "BBCode Converter",
   "main": "target/bbfy.js",
   "scripts": {
-    "test": "node_modules/gulp/bin/gulp.js test"
+    "compile": "node_modules/gulp/bin/gulp.js bundle",
+    "test": "node_modules/gulp/bin/gulp.js test",
+    "prepublish": "npm run compile"
   },
   "repository": {
     "type": "git",
