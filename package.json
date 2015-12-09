@@ -6,8 +6,17 @@
   "scripts": {
     "test": "node_modules/gulp/bin/gulp.js test"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lshift-de/bbfy"
+  },
+  "bugs": {
+    "url": "https://github.com/lshift-de/bbfy/issues"
+  },
   "keywords": [
-    "bbcode"
+    "bbcode",
+    "markup",
+    "parsing"
   ],
   "author": "Alexander Kahl <alex@lshift.de>",
   "license": "Apache-2.0",
