@@ -1,16 +1,19 @@
 var gulp = require('gulp');
+var util = require('gulp-util');
 var babel = require('gulp-babel');
 var sourcemaps = require('gulp-sourcemaps');
 var concat = require('gulp-concat');
 var tape = require('gulp-tape');
 var tapColorize = require('tap-colorize');
 var exec = require('child_process').exec;
-var webpack = require('gulp-webpack');
+var source = require('vinyl-source-stream');
+var buffer = require('vinyl-buffer');
+var browserify = require('browserify');
 
 gulp.task('compile', function () {
   return gulp.src('src/*.js')
     .pipe(sourcemaps.init())
-    .pipe(babel({ modules: 'umd' }))
+    .pipe(babel())
     .pipe(concat('bbfy.js'))
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('target'));
@@ -32,15 +35,10 @@ gulp.task('tape', ['compile'], function (cb) {
 });
 
 gulp.task('bundle', ['compile'], function () {
-  return gulp.src('target/bbfy.js')
-    .pipe(webpack({
-      module: {
-        preLoaders: [
-          { test: /\.json$/, loader: 'json'},
-        ]
-      },
-      output: { filename: 'bbfy.browser.js' }
-    }))
+  return browserify({ entries: ['target/bbfy.js'], standalone: 'bbfy' })
+    .bundle()
+    .pipe(source('bbfy.browser.js'))
+    .on('error', util.log)
     .pipe(gulp.dest('target'));
 });
 
