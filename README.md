@@ -98,6 +98,23 @@ changes and re-runs all building and test tasks on demand.
 If you don't want to install gulp globally, you can run it off the local node
 depedency cache: `node_modules/gulp/bin/gulp.js`.
 
+Supported HTML Tags
+-------------------
+
+At this point, bbfy supports conversion of the following tags:
+
+BBCode | HTML             | Description  | Supported Attributes
+-------|------------------|--------------|---------------------
+b      | b                | Emphasis     |
+i      | i                | Italic       |
+u      | u                | Underline    |
+s      | s                | Striketrough |
+color  | span color       | Font color   |
+font   | span font-family | Font family  |
+size   | span font-size   | Font size    |
+url    | a href           | Hyperlink    |
+img    | img              | Image        | width, height
+
 Links
 -----
 
