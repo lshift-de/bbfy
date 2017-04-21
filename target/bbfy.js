@@ -73,10 +73,10 @@ var rule_sets = {
     url: function url(text, tag) {
       var _url = arguments.length <= 2 || arguments[2] === undefined ? '' : arguments[2];
 
-      return _url.match(/^https?:\/\/.+/) ? '<a href="' + _url + '">' + text + '</a>' : text;
+      return _url.match(/\/\/.+\..+/) ? '<a href="' + _url + '">' + text + '</a>' : text;
     },
     img: function img(url, tag, args) {
-      if (url.match(/^https?:\/\/.+/)) {
+      if (url.match(/\/\/.+\..+/)) {
         if (args) {
           var _ref = typeof args === 'string' ? (/(\d+)x(\d+)/.exec(args) || []).slice(1) : [args.width, args.height];
 
