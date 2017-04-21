@@ -50,10 +50,10 @@ const rule_sets = {
       return size.match(/^\d+$/) ? span(`font-size: ${size}px;`, text) : text;
     },
     url (text, tag, url = '') {
-      return url.match(/^https?:\/\/.+/) ? `<a href="${url}">${text}</a>` : text;
+      return url.match(/\/\/.+\..+/) ? `<a href="${url}">${text}</a>` : text;
     },
     img (url, tag, args) {
-      if (url.match(/^https?:\/\/.+/)) {
+      if (url.match(/\/\/.+\..+/)) {
         if (args) {
           const [width = '', height = ''] = (typeof args === 'string')
                   ? (/(\d+)x(\d+)/.exec(args) || []).slice(1)

@@ -42,13 +42,15 @@ var data = [
   ['empty URL', '[url]Hello World![/url]', 'Hello World!'],
   ['invalid URL', '[url=foobar]Hello World![/url]', 'Hello World!'],
   ['valid URL', '[url=http://lshift.de/]Hello World![/url]', '<a href="http://lshift.de/">Hello World!</a>'],
+  ['valid URL(`//` start)', '[url=//lshift.de/]Hello World![/url]', '<a href="//lshift.de/">Hello World!</a>'],
   ['invalid img', '[img]foobar[/img]', ''],
-  ['valid img', '[img]http://foobar[/img]', '<img src="http://foobar"/>'],
-  ['valid img, invalid string size', '[img=foo]http://foobar[/img]', '<img src="http://foobar"/>'],
-  ['valid img, invalid string size 2', '[img=fooxbar]http://foobar[/img]', '<img src="http://foobar"/>'],
-  ['valid img, valid string size', '[img=100x200]http://foobar[/img]', '<img src="http://foobar" width="100" height="200"/>'],
-  ['valid img, invalid size attributes', '[img width=foo height=bar]http://foobar[/img]', '<img src="http://foobar"/>'],
-  ['valid img, valid size attributes', '[img width=100 height=200]http://foobar[/img]', '<img src="http://foobar" width="100" height="200"/>']
+  ['valid img', '[img]http://foobar.com[/img]', '<img src="http://foobar.com"/>'],
+  ['valid img(`//` start)', '[img]//foobar.com[/img]', '<img src="//foobar.com"/>'],
+  ['valid img, invalid string size', '[img=foo]http://foobar.com[/img]', '<img src="http://foobar.com"/>'],
+  ['valid img, invalid string size 2', '[img=fooxbar]http://foobar.com[/img]', '<img src="http://foobar.com"/>'],
+  ['valid img, valid string size', '[img=100x200]http://foobar.com[/img]', '<img src="http://foobar.com" width="100" height="200"/>'],
+  ['valid img, invalid size attributes', '[img width=foo height=bar]http://foobar.com[/img]', '<img src="http://foobar.com"/>'],
+  ['valid img, valid size attributes', '[img width=100 height=200]http://foobar.com[/img]', '<img src="http://foobar.com" width="100" height="200"/>']
 ];
 
 test('conversions', function (t) {
